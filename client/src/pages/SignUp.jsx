@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toastmessage } from "../helper/ToastReact.js";
 import { Button } from "@/components/ui/button";
+
 import {
   Form,
   FormControl,
@@ -21,6 +22,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { signIn_Route } from "@/helper/RoutesName";
 import GoogleLogin from "@/components/GoogleLogin.jsx";
+import { useDispatch } from "react-redux";
+import { setuserLoggedIn } from "@/redux/user/userSlice.js";
 
 const formSchema = z
   .object({
@@ -37,6 +40,7 @@ const formSchema = z
 export default function SignUp() {
   const [showPass, setShowPass] = useState(false);
   const [showCPass, setShowCPass] = useState(false);
+  const dispatch = useDispatch();
 
   const navigate = useNavigate();
 
@@ -66,7 +70,7 @@ export default function SignUp() {
       const successMsg = response?.data?.message || "Registration successful";
 
       toastmessage(successMsg, "success");
-
+      dispatch(setuserLoggedIn(response?.data?.user));
       navigate(signIn_Route);
       form.reset();
     } catch (error) {

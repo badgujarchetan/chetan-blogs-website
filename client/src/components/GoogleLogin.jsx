@@ -8,14 +8,16 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toastmessage } from "@/helper/ToastReact";
 import { Routes_Index } from "@/helper/RoutesName";
+import { setuserLoggedIn } from "@/redux/user/userSlice";
+import { useDispatch } from "react-redux";
 
 export default function GoogleLogin() {
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const handleGoogleSignIn = async () => {
     try {
       const GoogleResponse = await signInWithPopup(auth, provider);
-      console.log(GoogleResponse);
+      // console.log(GoogleResponse);
 
       const payload = {
         email: GoogleResponse.user.email,
@@ -29,6 +31,8 @@ export default function GoogleLogin() {
         payload,
         { withCredentials: true } // so cookie token is saved
       );
+
+      dispatch(setuserLoggedIn(response?.data?.user));
 
       toastmessage(response?.data?.message || "Login successful", "success");
 
