@@ -29,7 +29,7 @@ export default function GoogleLogin() {
       const response = await axios.post(
         import.meta.env.VITE_AUTH_URL_BACKEND + "/google-login",
         payload,
-        { withCredentials: true } // so cookie token is saved
+        { withCredentials: true }
       );
 
       dispatch(setuserLoggedIn(response?.data?.user));
