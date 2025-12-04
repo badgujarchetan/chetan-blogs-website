@@ -1,12 +1,21 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
+import cookieparser from "cookie-parser";
 import cors from "cors";
 
 const app = express();
+import connectToDatabase from "./config/mongoose_connection.js";
+connectToDatabase();
+console.log(connectToDatabase)
 const PORT = process.env.PORT || 3000;
-
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
+app.use(cookieparser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
