@@ -16,14 +16,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
-import { signUp_Route } from "@/helper/RoutesName";
+import { Routes_Index, signUp_Route } from "@/helper/RoutesName";
+import { toastmessage } from "@/helper/ToastReact";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import GoogleLogin from "@/components/GoogleLogin.jsx";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(3, "Password is required"),
 });
 
 export default function SignIn() {
+  const navigate = useNavigate();
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -33,22 +39,50 @@ export default function SignIn() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleSignIn(data) {
-    console.log("Login form data:", data);
+  async function handleSignIn(values) {
+    try {
+      setLoading(true);
 
-    // Reset form after submit
-    form.reset();
+      const payload = {
+        email: values.email,
+        password: values.password,
+      };
+
+      const response = await axios.post(
+        import.meta.env.VITE_AUTH_URL_BACKEND + "/login",
+        payload,{ withCredentials: true }
+      );
+
+      const successMsg = response?.data?.message || "Login successful";
+      toastmessage(successMsg, "success");
+
+      form.reset();
+      navigate(Routes_Index);
+    } catch (error) {
+      const backendMsg = error?.response?.data?.message;
+
+      let errorMsg = "Login failed. Try again.";
+
+      if (backendMsg === "User not found") {
+        errorMsg = "User not registered. Please Sign Up first!";
+      }
+
+      if (backendMsg === "Invalid password") {
+        errorMsg = "Wrong password. Please try again!";
+      }
+
+      toastmessage(errorMsg, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="flex justify-center items-center w-screen h-screen bg-gray-50">
       <div className="w-full max-w-md bg-white p-8 shadow-sm rounded-2xl border">
-        {/* Title */}
         <h2 className="text-3xl font-bold text-center mb-1">Sign In</h2>
-        {/* <p className="text-center text-gray-500 mb-6">
-          Welcome back! Login to your account.
-        </p> */}
 
         <Form {...form}>
           <form
@@ -107,22 +141,13 @@ export default function SignIn() {
               )}
             />
 
-            {/* Forgot Password */}
-            {/* <div className="text-right -mt-2">
-              <a
-                href="#"
-                className="text-sm text-blue-600 hover:underline cursor-pointer"
-              >
-                Forgot password?
-              </a>
-            </div> */}
-
-            {/* Submit */}
+            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full h-11 text-base cursor-pointer"
+              disabled={loading}
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
 
             {/* Divider */}
@@ -132,14 +157,16 @@ export default function SignIn() {
               <div className="flex-1 h-px bg-gray-300" />
             </div>
 
+            <GoogleLogin />
+
             {/* Google Button */}
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               className="w-full h-11 text-base cursor-pointer"
             >
               Continue with Google
-            </Button>
+            </Button> */}
 
             {/* Signup Redirect */}
             <p className="text-center text-sm text-gray-600 mt-4">

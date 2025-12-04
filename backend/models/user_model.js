@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     username: {
       type: String,
       required: true,
@@ -10,7 +15,7 @@ const userSchema = new mongoose.Schema(
       minlength: 3,
     },
     email: {
-      type: String, 
+      type: String,
       required: true,
       unique: true,
       trim: true,
@@ -22,7 +27,7 @@ const userSchema = new mongoose.Schema(
       maxlength: 500,
       default: "",
     },
-    avtar: {
+    avatar: {
       type: String,
       trim: true,
       default: "",
@@ -33,7 +38,9 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       trim: true,
     },
+    googleId: { type: String },
   },
+
   { timestamps: true }
 );
 
