@@ -10,7 +10,7 @@ export default function Layout() {
       <Topbar />
       <AppSidebar />
       <main className="w-full">
-        <div className="w-full min-h-[calc(100vh-40px)]">
+        <div className="w-full min-h-[calc(100vh-40px)] py-28 px-10 mx-auto">
           <Outlet />
         </div>
 

@@ -82,7 +82,7 @@ export const LoginUser = async (req, res, next) => {
 export const GoogleLoginUser = async (req, res) => {
   try {
     const { email, username, avatar, googleId } = req.body;
-     console.log(req.body);
+    console.log(req.body);
     let user = await User.findOne({
       email,
     });
@@ -126,5 +126,27 @@ export const GoogleLoginUser = async (req, res) => {
   } catch (error) {
     console.error("Google Login Error:", error);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+export const Logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
