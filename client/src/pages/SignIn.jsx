@@ -1,187 +1,122 @@
-"use client";
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import React from 'react'
+import { z } from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Card } from '@/components/ui/card'
+import { RouteIndex, RouteSignUp } from '@/helper/RouteName.js'
+import { Link, useNavigate } from 'react-router-dom'
+import  showToast  from '@/helper/showToast.js'
+import  getEvn  from '@/helper/getEnv.js'
+import { useDispatch } from 'react-redux'
+import { setUser } from '@/redux/user/user.slice'
+import GoogleLogin from '@/components/GoogleLogin'
+import logo from '@/assets/images/logo-white.png'
+const SignIn = () => {
 
-import React, { useState } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+    const dispath = useDispatch()
 
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
-import { Routes_Index, signUp_Route } from "@/helper/RoutesName";
-import { toastmessage } from "@/helper/ToastReact";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import GoogleLogin from "@/components/GoogleLogin.jsx";
+    const navigate = useNavigate()
+    const formSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(3, 'Password field  required.')
+    })
 
-const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(3, "Password is required"),
-});
+    const form = useForm({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    })
 
-export default function SignIn() {
-  const navigate = useNavigate();
 
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSignIn(values) {
-    try {
-      setLoading(true);
-
-      const payload = {
-        email: values.email,
-        password: values.password,
-      };
-
-      const response = await axios.post(
-        import.meta.env.VITE_AUTH_URL_BACKEND + "/login",
-        payload,
-        { withCredentials: true }
-      );
-
-      const successMsg = response?.data?.message || "Login successful";
-      toastmessage(successMsg, "success");
-
-      form.reset();
-      navigate(Routes_Index);
-    } catch (error) {
-      const backendMsg = error?.response?.data?.message;
-
-      let errorMsg = "Login failed. Try again.";
-
-      if (backendMsg === "User not found") {
-        errorMsg = "User not registered. Please Sign Up first!";
-      }
-
-      if (backendMsg === "Invalid password") {
-        errorMsg = "Wrong password. Please try again!";
-      }
-
-      toastmessage(errorMsg, "error");
-    } finally {
-      setLoading(false);
+    async function onSubmit(values) {
+        try {
+            const response = await fetch(`${getEvn('VITE_API_BASE_URL')}/auth/login`, {
+                method: 'post',
+                headers: { 'Content-type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(values)
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                return showToast('error', data.message)
+            }
+            dispath(setUser(data.user))
+            navigate(RouteIndex)
+            showToast('success', data.message)
+        } catch (error) {
+            showToast('error', error.message)
+        }
     }
-  }
 
-  return (
-    <div className="flex justify-center items-center w-screen h-screen bg-gray-50">
-      <div className="w-full max-w-md bg-white p-8 shadow-sm rounded-2xl border">
-        <h2 className="text-3xl font-bold text-center mb-1">Sign In</h2>
+    return (
+        <div className='flex justify-center items-center h-screen w-screen'>
+            <Card className="w-[400px] p-5">
+                <div className='flex justify-center items-center mb-2'>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSignIn)}
-            className="space-y-5"
-          >
-            {/* Email */}
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="you@example.com"
-                      {...field}
-                      className="h-11"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <Link to={RouteIndex}>
+                        <img src={logo} />
+                    </Link>
+                </div>
+                <h1 className='text-2xl font-bold text-center mb-5'>Login Into Account</h1>
+                <div className=''>
+                    <GoogleLogin />
+                    <div className='border my-5 flex justify-center items-center'>
+                        <span className='absolute bg-white text-sm'>Or</span>
+                    </div>
 
-            {/* Password */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
+                </div>
 
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="********"
-                        {...field}
-                        className="h-11 pr-10"
-                      />
-                    </FormControl>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}  >
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter your email address" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" placeholder="Enter your password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                    {/* Eye Icon */}
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
+                        <div className='mt-5'>
+                            <Button type="submit" className="w-full">Sign In</Button>
+                            <div className='mt-5 text-sm flex justify-center items-center gap-2'>
+                                <p>Don&apos;t have account?</p>
+                                <Link className='text-blue-500 hover:underline' to={RouteSignUp}>Sign Up</Link>
+                            </div>
+                        </div>
+                    </form>
+                </Form>
+            </Card>
 
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full h-11 text-base cursor-pointer"
-              disabled={loading}
-            >
-              {loading ? "Signing In..." : "Sign In"}
-            </Button>
-
-            {/* Divider */}
-            <div className="flex items-center my-4">
-              <div className="flex-1 h-px bg-gray-300" />
-              <span className="px-3 text-gray-500 text-sm">OR</span>
-              <div className="flex-1 h-px bg-gray-300" />
-            </div>
-
-            <GoogleLogin />
-
-            {/* Google Button */}
-            {/* <Button
-              type="button"
-              variant="outline"
-              className="w-full h-11 text-base cursor-pointer"
-            >
-              Continue with Google
-            </Button> */}
-
-            {/* Signup Redirect */}
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Don’t have an account?{" "}
-              <a
-                href={signUp_Route}
-                className="text-blue-600 hover:underline font-medium cursor-pointer"
-              >
-                Sign Up
-              </a>
-            </p>
-          </form>
-        </Form>
-      </div>
-    </div>
-  );
+        </div>
+    )
 }
+
+export default SignIn

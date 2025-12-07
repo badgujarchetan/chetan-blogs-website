@@ -1,227 +1,146 @@
-"use client";
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import React from 'react'
+import { z } from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Card } from '@/components/ui/card'
+import { RouteSignIn } from '@/helper/RouteName.js'
+import { Link, useNavigate } from 'react-router-dom'
+import  getEvn  from '@/helper/getEnv.js'
+import  showToast  from '@/helper/showToast.js'
+import GoogleLogin from '@/components/GoogleLogin'
 
-import React, { useState } from "react";
-import axios from "axios";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toastmessage } from "../helper/ToastReact.js";
-import { Button } from "@/components/ui/button";
+const SignUp = () => {
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+    const navigate = useNavigate()
 
-import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { signIn_Route } from "@/helper/RoutesName";
-import GoogleLogin from "@/components/GoogleLogin.jsx";
-import { useDispatch } from "react-redux";
-import { setuserLoggedIn } from "@/redux/user/userSlice.js";
+    const formSchema = z.object({
+        name: z.string().min(3, 'Name must be at least 3 character long.'),
+        email: z.string().email(),
+        password: z.string().min(8, 'Password must be at least 8 character long'),
+        confirmPassword: z.string().refine(data => data.password === data.confirmPassword, 'Password and confirm password should be same.')
+    })
 
-const formSchema = z
-  .object({
-    name: z.string().min(3, "Full name is required"),
-    email: z.string().email("Invalid email"),
-    password: z.string().min(8, "Password too short"),
-    confirmPassword: z.string().min(8),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
-  });
+    const form = useForm({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+        },
+    })
 
-export default function SignUp() {
-  const [showPass, setShowPass] = useState(false);
-  const [showCPass, setShowCPass] = useState(false);
-  const dispatch = useDispatch();
+    async function onSubmit(values) {
+        try {
+            const response = await fetch(`${getEvn('VITE_API_BASE_URL')}/auth/register`, {
+                method: 'post',
+                headers: { 'Content-type': 'application/json' },
+                body: JSON.stringify(values)
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                return showToast('error', data.message)
+            }
 
-  const navigate = useNavigate();
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  async function handleSubmitData(values) {
-    try {
-      const payload = {
-        username: values.name,
-        email: values.email,
-        password: values.password,
-      };
-
-      const response = await axios.post(
-        import.meta.env.VITE_AUTH_URL_BACKEND + "/register",
-        payload
-      );
-
-      const successMsg = response?.data?.message || "Registration successful";
-
-      toastmessage(successMsg, "success");
-      dispatch(setuserLoggedIn(response?.data?.user));
-      navigate(signIn_Route);
-      form.reset();
-    } catch (error) {
-      const errorMsg =
-        error?.response?.data?.message || "Registration failed. Try again.";
-
-      toastmessage(errorMsg, "error");
+            navigate(RouteSignIn)
+            showToast('success', data.message)
+        } catch (error) {
+            showToast('error', error.message)
+        }
     }
-  }
 
-  const isSubmitting = form.formState.isSubmitting;
-
-  return (
-    <div className="flex justify-center items-center w-screen h-screen bg-gray-50">
-      <div className="w-full max-w-md bg-white p-8 shadow-sm rounded-2xl border">
-        <h2 className="text-3xl font-bold text-center mb-1">Sign Up</h2>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmitData)}
-            className="space-y-5"
-          >
-            {/* Name */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input className="h-11" placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Email */}
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-11"
-                      placeholder="you@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Password */}
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPass ? "text" : "password"}
-                          className="h-11 pr-10"
-                          placeholder="********"
-                          {...field}
-                        />
-                      </FormControl>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPass(!showPass)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                        aria-label={
-                          showPass ? "Hide password" : "Show password"
-                        }
-                      >
-                        {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
+    return (
+        <div className='flex justify-center items-center h-screen w-screen'>
+            <Card className="w-[400px] p-5">
+                <h1 className='text-2xl font-bold text-center mb-5'>Create Your Account</h1>
+                <div className=''>
+                    <GoogleLogin />
+                    <div className='border my-5 flex justify-center items-center'>
+                        <span className='absolute bg-white text-sm'>Or</span>
                     </div>
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                </div>
 
-              {/* Confirm Password */}
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm</FormLabel>
 
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showCPass ? "text" : "password"}
-                          className="h-11 pr-10"
-                          placeholder="********"
-                          {...field}
-                        />
-                      </FormControl>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}  >
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter your name" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter your email address" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" placeholder="Enter your password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className='mb-3'>
+                            <FormField
+                                control={form.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Confirm Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" placeholder="Enter  password again" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setShowCPass(!showCPass)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                        aria-label={
-                          showCPass
-                            ? "Hide confirm password"
-                            : "Show confirm password"
-                        }
-                      >
-                        {showCPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
+                        <div className='mt-5'>
+                            <Button type="submit" className="w-full">Sign Up</Button>
+                            <div className='mt-5 text-sm flex justify-center items-center gap-2'>
+                                <p>Already have account?</p>
+                                <Link className='text-blue-500 hover:underline' to={RouteSignIn}>Sign In</Link>
+                            </div>
+                        </div>
+                    </form>
+                </Form>
+            </Card>
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              className="w-full h-11 cursor-pointer text-base"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Creating..." : "Create Account"}
-            </Button>
-            <GoogleLogin />
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Already have an account?{" "}
-              <a
-                href="/signin"
-                className="text-blue-600 hover:underline font-medium"
-              >
-                Sign In
-              </a>
-            </p>
-          </form>
-        </Form>
-      </div>
-    </div>
-  );
+        </div>
+    )
 }
+
+export default SignUp

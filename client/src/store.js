@@ -1,9 +1,8 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import userReducer from "./redux/user/userSlice";
-
-import storageSession from "redux-persist/lib/storage/session";
-import persistReducer from "redux-persist/lib/persistReducer";
-import { persistStore } from "redux-persist";
+import userReducer from "./redux/user/user.slice";
+import sessionStorage from "redux-persist/es/storage/session";
+import persistReducer from "redux-persist/es/persistReducer";
+import persistStore from "redux-persist/es/persistStore";
 
 const rootReducer = combineReducers({
   user: userReducer,
@@ -11,17 +10,14 @@ const rootReducer = combineReducers({
 
 const persistConfig = {
   key: "root",
-  storage: storageSession,
+  storage: sessionStorage,
 };
-
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+    getDefaultMiddleware({ serializableCheck: false }),
 });
 
 export const persistor = persistStore(store);

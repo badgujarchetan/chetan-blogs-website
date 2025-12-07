@@ -1,85 +1,109 @@
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
-import Logo from "../assets/images/logo-white.png";
-import { House } from "lucide-react";
-import { ChartBarStacked } from "lucide-react";
-import { Rss } from "lucide-react";
-import { MessageSquareDot } from "lucide-react";
-import { CircleUserRound } from "lucide-react";
-import { Dot } from 'lucide-react';
-export function AppSidebar() {
-  return (
-    <Sidebar>
-      <SidebarHeader className="bg-white">
-        <img src={Logo} alt="Logo" width={120} height={120} />
-      </SidebarHeader>
-      <SidebarContent className="bg-white">
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <House />
-                <Link to="#">Home</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <ChartBarStacked />
-                <Link to="#">Categories</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <Rss />
-                <Link to="#">Blogs</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <MessageSquareDot />
-                <Link to="#">Comments</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <CircleUserRound />
-                <Link to="#">User</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from "@/components/ui/sidebar"
+import { Link } from "react-router-dom"
+import logo from '@/assets/images/logo-white.png'
+import { IoHomeOutline } from "react-icons/io5";
+import { BiCategoryAlt } from "react-icons/bi";
+import { GrBlog } from "react-icons/gr";
+import { FaRegComments } from "react-icons/fa6";
+import { LuUsers } from "react-icons/lu";
+import { GoDot } from "react-icons/go";
+import { RouteBlog, RouteBlogByCategory, RouteCategoryDetails, RouteCommentDetails, RouteIndex, RouteUser } from "@/helper/RouteName.js";
+import { useFetch } from "@/hooks/useFetch";
+import getEvn from "@/helper/getEnv.js";
+import { useSelector } from "react-redux";
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Categories</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <Dot />
-                <Link to="#">Categories Items</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter />
-    </Sidebar>
-  );
+const AppSidebar = () => {
+    const user = useSelector(state => state.user)
+    const { data: categoryData } = useFetch(`${getEvn('VITE_API_BASE_URL')}/category/all-category`, {
+        method: 'get',
+        credentials: 'include'
+    })
+
+    return (
+        <Sidebar>
+            <SidebarHeader className="bg-white">
+                <img src={logo} width={120} />
+            </SidebarHeader>
+            <SidebarContent className="bg-white">
+                <SidebarGroup>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton>
+                                <IoHomeOutline />
+                                <Link to={RouteIndex}>Home</Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+
+                        {user && user.isLoggedIn
+                            ? <>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <GrBlog />
+                                        <Link to={RouteBlog}>Blogs</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <FaRegComments />
+                                        <Link to={RouteCommentDetails}>Comments</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </>
+                            :
+                            <></>
+                        }
+                        {user && user.isLoggedIn && user.user.role === 'admin'
+                            ? <>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <BiCategoryAlt />
+                                        <Link to={RouteCategoryDetails}>Categories</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <LuUsers />
+                                        <Link to={RouteUser}>Users</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </>
+                            :
+                            <></>
+                        }
+
+                    </SidebarMenu>
+                </SidebarGroup>
+
+                <SidebarGroup>
+                    <SidebarGroupLabel>
+                        Categories
+                    </SidebarGroupLabel>
+                    <SidebarMenu>
+                        {categoryData && categoryData.category.length > 0
+                            && categoryData.category.map(category => <SidebarMenuItem key={category._id}>
+                                <SidebarMenuButton>
+                                    <GoDot />
+                                    <Link to={RouteBlogByCategory(category.slug)}>{category.name}</Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>)
+                        }
+
+                    </SidebarMenu>
+                </SidebarGroup>
+            </SidebarContent>
+
+        </Sidebar>
+    )
 }
+
+export default AppSidebar

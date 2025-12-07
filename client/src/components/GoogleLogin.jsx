@@ -1,60 +1,54 @@
 import React from "react";
 import { Button } from "./ui/button";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "@/helper/FirebaseSupport";
 import { FcGoogle } from "react-icons/fc";
-import axios from "axios";
+import { signInWithPopup } from "firebase/auth";
 
+import { auth, provider } from "@/helper/firebase.js";
+import { RouteIndex } from "@/helper/RouteName.js";
+import showToast from "@/helper/showToast.js";
+import getEvn from "@/helper/getEnv.js";
 import { useNavigate } from "react-router-dom";
-import { toastmessage } from "@/helper/ToastReact";
-import { Routes_Index } from "@/helper/RoutesName";
-import { setuserLoggedIn } from "@/redux/user/userSlice";
 import { useDispatch } from "react-redux";
+import { setUser } from "@/redux/user/user.slice";
 
-export default function GoogleLogin() {
+const GoogleLogin = () => {
+  const dispath = useDispatch();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const handleGoogleSignIn = async () => {
+  const handleLogin = async () => {
     try {
-      const GoogleResponse = await signInWithPopup(auth, provider);
-      // console.log(GoogleResponse);
-
-      const payload = {
-        email: GoogleResponse.user.email,
-        username: GoogleResponse.user.displayName,
-        avatar: GoogleResponse.user.photoURL,
-        googleId: GoogleResponse.user.uid,
+      const googleResponse = await signInWithPopup(auth, provider);
+      const user = googleResponse.user;
+      const bodyData = {
+        name: user.displayName,
+        email: user.email,
+        avatar: user.photoURL,
       };
-
-      const response = await axios.post(
-        import.meta.env.VITE_AUTH_URL_BACKEND + "/google-login",
-        payload,
-        { withCredentials: true }
+      const response = await fetch(
+        `${getEvn("VITE_API_BASE_URL")}/auth/google-login`,
+        {
+          method: "post",
+          headers: { "Content-type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(bodyData),
+        }
       );
-
-      dispatch(setuserLoggedIn(response?.data?.user));
-
-      toastmessage(response?.data?.message || "Login successful", "success");
-
-      navigate(Routes_Index);
+      const data = await response.json();
+      if (!response.ok) {
+        return showToast("error", data.message);
+      }
+      dispath(setUser(data.user));
+      navigate(RouteIndex);
+      showToast("success", data.message);
     } catch (error) {
-      console.log(error);
-      toastmessage(
-        error?.response?.data?.message || "Google Login failed",
-        "error"
-      );
+      showToast("error", error.message);
     }
   };
-
   return (
-    <Button
-      onClick={handleGoogleSignIn}
-      type="button"
-      variant="outline"
-      className="w-full h-11 text-base cursor-pointer gap-2"
-    >
+    <Button variant="outline" className="w-full" onClick={handleLogin}>
       <FcGoogle />
-      Continue with Google
+      Continue With Google
     </Button>
   );
-}
+};
+
+export default GoogleLogin;
