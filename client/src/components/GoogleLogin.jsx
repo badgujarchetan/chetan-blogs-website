@@ -17,14 +17,16 @@ const GoogleLogin = () => {
   const handleLogin = async () => {
     try {
       const googleResponse = await signInWithPopup(auth, provider);
+      // console.log(googleResponse);
       const user = googleResponse.user;
       const bodyData = {
         name: user.displayName,
         email: user.email,
         avatar: user.photoURL,
+        googleId: user.uid,
       };
       const response = await fetch(
-        `${getEvn("VITE_API_BASE_URL")}/auth/google-login`,
+        `${getEvn("VITE_API_BASE_URL")}/auth/googlelogin`,
         {
           method: "post",
           headers: { "Content-type": "application/json" },
