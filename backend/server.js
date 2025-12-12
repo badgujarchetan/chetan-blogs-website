@@ -5,6 +5,7 @@ import cors from "cors";
 import express from "express";
 import connectDB from "./config/mongoose_connection.js";
 import authRoutes from "./routes/auth_routes.js";
+import userRoutes from "./routes/user_routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 app.use(
   cors({

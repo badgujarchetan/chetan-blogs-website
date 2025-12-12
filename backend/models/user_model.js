@@ -25,11 +25,10 @@ const userSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-    googleId:{
+    googleId: {
       type: String,
-      default: null,  
-    }
-   
+      default: null,
+    },
   },
   { timestamps: true }
 );

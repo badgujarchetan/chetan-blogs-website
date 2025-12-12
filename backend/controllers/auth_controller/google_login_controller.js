@@ -2,43 +2,48 @@ import User from "../../models/user_model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-export default async function googleLoginController(req, res) {
+export const GoogleLogin = async (req, res) => {
   try {
-    const { email, name, googleId, avatar } = req.body;
-
-    let user = await User.findOne({ email });
-
+    const { name, email, avatar, googleId } = req.body;
+    let user;
+    user = await User.findOne({ email });
     if (!user) {
-      const randomPassword = Math.random().toString(36).slice(-8);
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-      user = await User.create({
+      const password = Math.random().toString();
+      const hashedPassword = bcrypt.hashSync(password);
+      const newUser = new User({
         name,
         email,
-        googleId,
-        avatar,
         password: hashedPassword,
+        avatar,
+        googleId,
       });
+
+      user = await newUser.save();
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      {
+        _id: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET
+    );
 
-    res.cookie("token", token, {
+    res.cookie("access_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production" ? true : false,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       path: "/",
     });
 
-    return res.status(200).json({
-      message: "Logged in successfully",
-      user,
-      token,
+    const newUser = user.toObject({ getters: true });
+    delete newUser.password;
+    res.status(200).json({
+      success: true,
+      user: newUser,
+      message: "Login successful.",
     });
   } catch (error) {
-    console.error("Google Login Error:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal server error" });
   }
-}
+};
